@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: kafka
-        image: bitnami/kafka:latest
+        image: bitnami/kafka:3.5.1
         env:
         - name: ALLOW_PLAINTEXT_LISTENER
           value: "yes"
@@ -23,8 +23,22 @@ spec:
           value: "PLAINTEXT://:9092"
         - name: KAFKA_CFG_ADVERTISED_LISTENERS
           value: "PLAINTEXT://kafka:9092"
+        - name: KAFKA_CFG_BROKER_ID
+          value: "1"
+        - name: KAFKA_CFG_OFFSETS_TOPIC_REPLICATION_FACTOR
+          value: "1"
+        - name: KAFKA_CFG_LOG_DIRS
+          value: "/opt/kafka-logs"
+        - name: KAFKA_CFG_AUTO_CREATE_TOPICS_ENABLE
+          value: "false"
         ports:
         - containerPort: 9092
+        volumeMounts:
+        - name: kafka-logs
+          mountPath: /opt/kafka-logs
+      volumes:
+      - name: kafka-logs
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -37,4 +51,4 @@ spec:
   - protocol: TCP
     port: 9092
     targetPort: 9092
-  clusterIP: None # Makes the service only accessible within the cluster
+  clusterIP: None
