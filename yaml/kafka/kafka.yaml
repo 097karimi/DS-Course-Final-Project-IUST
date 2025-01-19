@@ -37,6 +37,10 @@ spec:
           value: "PLAINTEXT://0.0.0.0:9093"
         - name: KAFKA_CFG_CONTROLLER_QUORUM_VOTERS
           value: "1@localhost:9093"
+        - name: KAFKA_CFG_NODE_ID
+          value: "1"
+        - name: KAFKA_CFG_CONTROLLER_LISTENER_NAMES
+          value: "CONTROLLER"
         ports:
         - containerPort: 9092
         volumeMounts:
