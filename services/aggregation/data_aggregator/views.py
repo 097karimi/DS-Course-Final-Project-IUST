@@ -28,8 +28,8 @@ class StockDataView(APIView):
             for row in results:
                 data.append({
                     'stock_symbol': row[0],
-                    'topic': row[1],
-                    'signal': row[2],
+                    #'topic': row[1],
+                    #'signal': row[2],
                     'local_time': row[3],
                     'open': row[4],
                     'close': row[5],
