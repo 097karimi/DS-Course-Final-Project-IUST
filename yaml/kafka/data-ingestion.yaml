@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: data-ingestion
-        image: <your-docker-image>:latest
+        image: ingest:latest
         ports:
         - containerPort: 5000
         env:

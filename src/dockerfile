@@ -10,9 +10,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application code
 COPY . .
 
-# Copy wait-for-it script
-COPY wait-for-it.sh /wait-for-it.sh
-RUN chmod +x /wait-for-it.sh
-
-# Run the application with wait-for-it
-CMD ["/wait-for-it.sh", "kafka-broker:9092", "--", "python", "./app/ingest.py"]
+# Run the application
+CMD ["python", "./app/ingest.py"]
