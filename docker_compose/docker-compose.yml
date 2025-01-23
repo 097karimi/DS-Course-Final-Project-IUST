@@ -1,0 +1,133 @@
+services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka-broker
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper:2181"
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka-broker:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    command:
+      - sh
+      - -c
+      - |
+        /etc/confluent/docker/run &
+        while ! nc -z kafka-broker 9092; do
+          sleep 1;
+        done;
+        kafka-topics --create --topic btcirt_topic  --replication-factor 1 --if-not-exists --bootstrap-server kafka-broker:9092;
+        kafka-topics --create --topic usdtirt_topic --replication-factor 1 --if-not-exists --bootstrap-server kafka-broker:9092;
+        kafka-topics --create --topic ethirt_topic --replication-factor 1 --if-not-exists --bootstrap-server kafka-broker:9092;
+        kafka-topics --create --topic etcirt_topic --replication-factor 1 --if-not-exists --bootstrap-server kafka-broker:9092;
+        kafka-topics --create --topic shibirt_topic --replication-factor 1 --if-not-exists --bootstrap-server kafka-broker:9092;
+        wait
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:latest
+    container_name: schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: "zookeeper:2181"
+      SCHEMA_REGISTRY_LISTENERS: "http://schema-registry:8081"
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "PLAINTEXT://kafka-broker:9092"
+
+  data-ingestion:
+    build:
+      context: ./services/data-ingestion
+      dockerfile: Dockerfile
+    container_name: data-ingestion
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKER: "kafka-broker:9092"
+
+  stream-processing:
+    build:
+      context: ./services/stream-processing
+      dockerfile: Dockerfile
+    container_name: stream-processing
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BROKER: "kafka-broker:9092"
+    command: spark-submit --master local[*] --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.1.2 /app/consumer.py
+
+  questdb:
+    image: questdb/questdb:latest
+    container_name: questdb
+    ports:
+      - "9000:9000"  # HTTP / Web Console
+      - "8812:8812"  # Postgres wire
+    volumes:
+      - questdb-volume:/root/.questdb
+
+  questdb-init:
+    image: postgres:latest
+    depends_on:
+      - questdb
+    volumes:
+      # Adjusted to mount the init_questdb.sql from the "db" directory
+      - ./db/init_questdb.sql:/docker-entrypoint-initdb.d/init_questdb.sql:ro
+    environment:
+      PGPASSWORD: quest
+    command: >
+      bash -c "
+        echo 'Waiting for QuestDB to be ready...';
+        until pg_isready -h questdb -p 8812; do
+          sleep 1;
+        done;
+        echo 'QuestDB is up, running init script...';
+        psql -h questdb -p 8812 -U admin -d qdb -f /docker-entrypoint-initdb.d/init_questdb.sql;
+        echo 'Initialization script executed successfully.';
+      "
+  #aggregator_django:
+  #  build:
+  #    context: ./services/aggregation/data_aggregator
+  #  container_name: data_aggregator
+  #  command: python manage.py runserver 0.0.0.0:8000
+  #  volumes:
+  #    - ./services/aggregation/data_aggregator:/app
+  #  ports:
+  #    - "8000:8000"
+  #  depends_on:
+  #    - questdb
+    
+
+  # postgres:
+  #   image: postgres:latest
+  #   container_name: postgres
+  #   environment:
+  #     POSTGRES_USER: myuser
+  #     POSTGRES_PASSWORD: mypassword
+  #     POSTGRES_DB: mydatabase
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_data:/var/lib/postgresql/data
+  #     - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  zookeeper_data:
+  kafka_data:
+  schema_registry_data:
+  questdb-volume:
+  # postgres_data:
