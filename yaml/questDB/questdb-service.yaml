@@ -8,11 +8,13 @@ spec:
   selector:
     app: questdb
   ports:
-  - protocol: TCP
+  - name: http
+    protocol: TCP
     port: 9000
     targetPort: 9000
     nodePort: 30090
-  - protocol: TCP
+  - name: tcp
+    protocol: TCP
     port: 8812
     targetPort: 8812
     nodePort: 30091
