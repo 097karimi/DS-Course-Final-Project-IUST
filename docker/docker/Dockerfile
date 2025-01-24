@@ -23,6 +23,6 @@ RUN mkdir -p /opt && \
 
 # add scripts and update spark default config
 ADD common.sh spark-master spark-worker /
-RUN chmod +x /common.sh /spark-master /spark-worker /spark-defaults.conf
+RUN chmod +x /spark-master /spark-worker
 ADD spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 ENV PATH $PATH:/opt/spark/bin
