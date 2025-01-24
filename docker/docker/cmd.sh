@@ -11,3 +11,7 @@ kubectl apply -f rolebinding.yaml
 kubectl get rolebindings -n default -o yaml
 kubectl get rolebindings -n default
 
+kubectl apply -f configmap-manager-role.yaml
+kubectl apply -f configmap-manager-binding.yaml
+
+
