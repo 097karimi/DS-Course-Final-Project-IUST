@@ -7,3 +7,7 @@ kubectl logs job/spark-stream-processing
 # roll
 kubectl apply -f role.yaml
 kubectl apply -f rolebinding.yaml
+
+kubectl get rolebindings -n default -o yaml
+kubectl get rolebindings -n default
+
