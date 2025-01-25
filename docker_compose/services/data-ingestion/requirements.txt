@@ -1,7 +1,0 @@
-flask
-kafka-python
-psutil
-numpy
-mmh3
-requests
-pytz
